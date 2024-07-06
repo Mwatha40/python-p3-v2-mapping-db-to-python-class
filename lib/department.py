@@ -1,8 +1,11 @@
+#lib/department.py
+
 from __init__ import CURSOR, CONN
 
 
 class Department:
 
+    # Dictionary of objects saved to the database.
     all = {}
 
     def __init__(self, name, location, id=None):
@@ -37,7 +40,7 @@ class Department:
     def save(self):
         """ Insert a new row with the name and location values of the current Department instance.
         Update object id attribute using the primary key value of new row.
-        """
+        Save the object in local dictionary using table row's PK as dictionary key"""
         sql = """
             INSERT INTO departments (name, location)
             VALUES (?, ?)
@@ -67,7 +70,10 @@ class Department:
         CONN.commit()
 
     def delete(self):
-        """Delete the table row corresponding to the current Department instance"""
+        """Delete the table row corresponding to the current Department instance,
+        delete the dictionary entry, and reassign id attribute"""
+
+
         sql = """
             DELETE FROM departments
             WHERE id = ?
@@ -76,9 +82,14 @@ class Department:
         CURSOR.execute(sql, (self.id,))
         CONN.commit()
 
+        # Delete the dictionary entry using id as the key
+        del type(self).all[self.id]
+
+        # Set the id to None
+        self.id = None
+
     @classmethod
     def instance_from_db(cls, row):
-
         """Return a Department object having the attribute values from the table row."""
 
         # Check the dictionary for an existing instance using the row's primary key
@@ -129,20 +140,3 @@ class Department:
 
         row = CURSOR.execute(sql, (name,)).fetchone()
         return cls.instance_from_db(row) if row else None
-
-    def delete(self):
-        """Delete the table row corresponding to the current Department instance,
-        delete the dictionary entry, and reassign id attribute"""
-
-
-        sql = """
-            DELETE FROM departments
-            WHERE id = ?
-        """
-
-        CURSOR.execute(sql, (self.id,))
-        CONN.commit()
-
-        del type(self).all[self.id]
-
-        self.id = None
